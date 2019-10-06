@@ -11,16 +11,25 @@ CorFunc <- function(d,indices){
   return(R$r[1,2])
 }
 
-# unused example of difference in significance but no difference in effect.
-set.seed(1235)  # for reproducibility
-A <- rnorm(20,0.5,1)# simulate random data
+# example of difference in significance but no difference in effect.
+for (i in c(1:10)){ #
+  print(i)
+  # set.seed(1235)  # for reproducibility
+  set.seed(1234+i)
+  A <- rnorm(20,0.5,1)# simulate random data
+  tA <- t.test(A, mu=0)
+  print(mean(A))
+  print(tA$p.value)
+}
+set.seed(1237)  # for reproducibility
+A <- rnorm(20,0.5,0.9)# simulate random data
 t.test(A, mu=0)
+set.seed(1238)  # for reproducibility
 B <- rnorm(20,0.5,1.5)# simulate random data with larger variance
 t.test(B, mu=0)
 AB=as.matrix(c(A,B))
 group = factor(rep(c('A','B'),each=20));
 dt = data.frame(AB,group)
-
 t.test(A,B,var.equal = TRUE)
 
 sumup = data.frame("Gr" = c('A','B'))
@@ -53,10 +62,17 @@ for (i in c(10,26)){ #,11,8,18,22,24 --> other possible examples
   RValue = R$r[1,2]
   print(R$r[1,2])
   print(R$P[1,2])
-  # boostrap CI --> CorFunc defined above
-  Rbci <- boot.ci(boot(data = Add, statistic = CorFunc, R = 10000),type="norm")
+
+  # bootstrap CI
+  cor.boot <- NULL
+  N <- dim(Add)[1]
+  for (i in 1:1000) {
+    idx <- sample.int(N, N, replace = TRUE) 
+    cor.boot[i] <- cor(Add[idx, ])[1,2] 
+  }
+  Rbci0<- quantile(cor.boot, c(.025, .975))
   
-  txt = toString(paste("Pearson R:", format(RValue,digits=2), "CI: [",format( Rbci$normal[2],digits=2),",",format(Rbci$normal[3],digits=2) ,"]"))
+  txt = toString(paste("Pearson R:", format(RValue,digits=2), "CI: [",format( Rbci0[1],digits=2),",",format(Rbci0[2],digits=2) ,"]"))
   NiewenCorr<-ggplot(Add, aes(X, Y)) +
     geom_point() + 
     labs(x = "X", y = "Y") +
@@ -114,10 +130,18 @@ for (i in c(1,3,5)){
   R<-rcorr(Add$X,Add$Y,type=c("pearson"))
   RValue = R$r[1,2]
   print(R$P[1,2])
-  # boostrap CI
-  Rbci <- boot.ci(boot(data = Add, statistic = CorFunc, R = 10000),type="norm")
+  
+  # bootstrap CI
+  cor.boot <- NULL
+  N <- dim(Add)[1]
+  for (i in 1:1000) {
+    idx <- sample.int(N, N, replace = TRUE) 
+    cor.boot[i] <- cor(Add[idx, ])[1,2] 
+  }
+  Rbci<- quantile(cor.boot, c(.025, .975))
+  
 
-  txt = toString(paste("Pearson R:", format(RValue,digits=2), "CI: [",format( Rbci$normal[2],digits=2),",",format(Rbci$normal[3],digits=2) ,"]"))
+  txt = toString(paste("Pearson R:", format(RValue,digits=2), "CI: [",format( Rbci[1],digits=2),",",format(Rbci[2],digits=2) ,"]"))
   PP[[length(PP) + 1]]<-ggplot(Add, aes(X, Y),fill=factor(Z)) +
     scale_color_manual(values=c("black", "red")) +
     scale_fill_manual(values=c(NA, "red")) +
@@ -145,10 +169,17 @@ for (i in c(0,2,4)){
   R<-rcorr(Add$X,Add$Y)
   RCor = R$r[1,2]
   print(R$P[1,2])
-  # boostrap CI
-  Rbci <- boot.ci(boot(data = Add, statistic = CorFunc, R = 10000),type="norm")
+  # bootstrap CI
+  cor.boot <- NULL
+  N <- dim(Add)[1]
+  for (i in 1:1000) {
+    idx <- sample.int(N, N, replace = TRUE) 
+    cor.boot[i] <- cor(Add[idx, ])[1,2] 
+  }
+  Rbci2<- quantile(cor.boot, c(.025, .975))
   
-  txt = toString(paste("Pearson R:", format(RCor,digits=2), "CI: [",format( Rbci$normal[2],digits=2),",",format(Rbci$normal[3],digits=2) ,"]"))
+  
+  txt = toString(paste("Pearson R:", format(RCor,digits=2), "CI: [",format( Rbci2[1],digits=2),",",format(Rbci2[2],digits=2) ,"]"))
   QQ[[length(QQ) + 1]]<-ggplot(Add, aes(X, Y),fill=factor(Z)) +
     scale_color_manual(values=c("black", "red")) +
     scale_fill_manual(values=c(NA, "red")) +
